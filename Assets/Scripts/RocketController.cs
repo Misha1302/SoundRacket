@@ -2,12 +2,13 @@ using UnityEngine;
 
 public class RocketController : MonoBehaviour
 {
-    [SerializeField] private float maxSpeed = 10f;
-    [SerializeField] private float acceleration = 18f;
-    [SerializeField] private float deceleration = 12f;
+    [Header("Movement")]
+    [SerializeField] private float thrustMultiplier = 18f;
+    [SerializeField] private float gravity = 10f;
+    [SerializeField] private float maxUpwardSpeed = 12f;
 
     private Vector3 startPosition;
-    private float currentSpeed;
+    private float verticalSpeed;
 
     public float CurrentHeight => Mathf.Max(0f, transform.position.y - startPosition.y);
 
@@ -16,26 +17,20 @@ public class RocketController : MonoBehaviour
         startPosition = transform.position;
     }
 
-    public void MoveUp(float power01)
+    public void Simulate(float processedPower01)
     {
-        float clampedPower = Mathf.Clamp01(power01);
+        float power = Mathf.Clamp01(processedPower01);
+        float acceleration = (power * thrustMultiplier) - gravity;
 
-        if (clampedPower > 0f)
-        {
-            currentSpeed += acceleration * clampedPower * Time.deltaTime;
-        }
-        else
-        {
-            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.deltaTime);
-        }
+        verticalSpeed += acceleration * Time.deltaTime;
+        verticalSpeed = Mathf.Clamp(verticalSpeed, 0f, maxUpwardSpeed);
 
-        currentSpeed = Mathf.Min(currentSpeed, maxSpeed);
-        transform.position += Vector3.up * (currentSpeed * Time.deltaTime);
+        transform.position += Vector3.up * (verticalSpeed * Time.deltaTime);
     }
 
     public void ResetToStart()
     {
         transform.position = startPosition;
-        currentSpeed = 0f;
+        verticalSpeed = 0f;
     }
 }
