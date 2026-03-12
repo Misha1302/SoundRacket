@@ -11,6 +11,7 @@ public class RocketController : MonoBehaviour
     private float verticalSpeed;
 
     public float CurrentHeight => Mathf.Max(0f, transform.position.y - startPosition.y);
+    public float CurrentVerticalSpeed => verticalSpeed;
 
     private void Awake()
     {
