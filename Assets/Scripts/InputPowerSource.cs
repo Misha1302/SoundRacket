@@ -15,4 +15,9 @@ public abstract class InputPowerSource : MonoBehaviour
     }
 
     protected abstract float ReadRawPower();
+
+    public virtual void ResetState()
+    {
+        CurrentPower = 0f;
+    }
 }

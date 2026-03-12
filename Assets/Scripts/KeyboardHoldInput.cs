@@ -18,8 +18,9 @@ public class KeyboardHoldInput : InputPowerSource
         return holdValue;
     }
 
-    public void ResetState()
+    public override void ResetState()
     {
+        base.ResetState();
         holdValue = 0f;
     }
 }
