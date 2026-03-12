@@ -7,7 +7,7 @@ public class RocketUiController : MonoBehaviour
     [SerializeField] private Text powerText;
     [SerializeField] private Text resultText;
 
-    public void Render(float power01, float currentResult, float maxResult)
+    public void Render(string stateLabel, float power01, float currentHeight, float maxHeight, float remainingTime, float finalResult)
     {
         if (powerSlider != null)
         {
@@ -21,7 +21,11 @@ public class RocketUiController : MonoBehaviour
 
         if (resultText != null)
         {
-            resultText.text = $"Height: {currentResult:0.0} / Best: {maxResult:0.0}";
+            resultText.text =
+                $"State: {stateLabel}\n" +
+                $"Height: {currentHeight:0.0} (Max: {maxHeight:0.0})\n" +
+                $"Time Left: {remainingTime:0.0}s\n" +
+                $"Final Result: {finalResult:0.0}";
         }
     }
 }
