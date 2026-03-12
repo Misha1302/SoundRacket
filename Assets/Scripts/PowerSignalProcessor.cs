@@ -2,9 +2,13 @@ using UnityEngine;
 
 public class PowerSignalProcessor : MonoBehaviour
 {
-    [SerializeField] private float deadZone = 0.05f;
-    [SerializeField] private float responseExponent = 1.25f;
-    [SerializeField] private float smoothingSpeed = 8f;
+    [Header("Shaping")]
+    [SerializeField] private float deadZone = 0.03f;
+    [SerializeField] private float responseExponent = 1.2f;
+
+    [Header("Smoothing")]
+    [SerializeField] private float riseSpeed = 8f;
+    [SerializeField] private float fallSpeed = 5f;
 
     private float smoothedPower;
 
@@ -14,7 +18,8 @@ public class PowerSignalProcessor : MonoBehaviour
         float deNoised = normalized <= deadZone ? 0f : Mathf.InverseLerp(deadZone, 1f, normalized);
         float curved = Mathf.Pow(deNoised, Mathf.Max(0.01f, responseExponent));
 
-        smoothedPower = Mathf.Lerp(smoothedPower, curved, smoothingSpeed * Time.deltaTime);
+        float speed = curved > smoothedPower ? riseSpeed : fallSpeed;
+        smoothedPower = Mathf.MoveTowards(smoothedPower, curved, speed * Time.deltaTime);
         return smoothedPower;
     }
 
