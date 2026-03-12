@@ -1,83 +1,79 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class RocketGameController : MonoBehaviour
 {
-    private enum ControlMode
+    private enum InputMode
     {
-        Microphone,
-        Keyboard
+        Keyboard,
+        Microphone
     }
 
     [Header("Mode")]
-    [SerializeField] private ControlMode mode = ControlMode.Microphone;
+    [SerializeField] private InputMode inputMode = InputMode.Keyboard;
 
     [Header("References")]
-    [SerializeField] private RocketMotor rocketMotor;
-    [SerializeField] private MicrophoneLoudnessSource microphoneInput;
+    [SerializeField] private RocketController rocketController;
+    [SerializeField] private RocketUiController uiController;
+    [SerializeField] private PowerSignalProcessor signalProcessor;
     [SerializeField] private KeyboardHoldInput keyboardInput;
+    [SerializeField] private MicrophoneLoudnessSource microphoneInput;
 
-    [Header("UI")]
-    [SerializeField] private Slider powerSlider;
-    [SerializeField] private Text powerText;
-    [SerializeField] private Text resultText;
+    private float maxHeight;
 
-    [Header("Result")]
-    [SerializeField] private float scoreMultiplier = 100f;
-
-    private Vector3 startPosition;
-
-    private void Awake()
+    private void Start()
     {
-        if (rocketMotor != null)
-        {
-            startPosition = rocketMotor.transform.position;
-        }
+        ResetRun();
     }
 
     private void Update()
     {
-        if (rocketMotor == null)
+        if (rocketController == null || uiController == null || signalProcessor == null)
         {
             return;
         }
 
-        float thrust = ReadCurrentInput();
-        rocketMotor.Tick(thrust);
-        UpdateUi(thrust);
+        float rawPower = GetActiveInputPower();
+        float processedPower = signalProcessor.Process(rawPower);
+
+        rocketController.MoveUp(processedPower);
+
+        float currentHeight = rocketController.CurrentHeight;
+        maxHeight = Mathf.Max(maxHeight, currentHeight);
+
+        uiController.Render(processedPower, currentHeight, maxHeight);
 
         if (Input.GetKeyDown(KeyCode.R))
         {
-            rocketMotor.ResetFlight(startPosition);
+            ResetRun();
         }
     }
 
-    private float ReadCurrentInput()
+    private float GetActiveInputPower()
     {
-        if (mode == ControlMode.Keyboard)
-        {
-            return keyboardInput != null ? keyboardInput.ProcessedLevel : 0f;
-        }
+        InputPowerSource source = inputMode == InputMode.Keyboard
+            ? keyboardInput
+            : microphoneInput;
 
-        return microphoneInput != null ? microphoneInput.ProcessedLevel : 0f;
+        return source != null ? source.CurrentPower : 0f;
     }
 
-    private void UpdateUi(float thrust)
+    private void ResetRun()
     {
-        if (powerSlider != null)
+        maxHeight = 0f;
+
+        if (signalProcessor != null)
         {
-            powerSlider.value = thrust;
+            signalProcessor.ResetState();
         }
 
-        if (powerText != null)
+        if (rocketController != null)
         {
-            powerText.text = $"Power: {Mathf.RoundToInt(thrust * 100f)}%";
+            rocketController.ResetToStart();
         }
 
-        if (resultText != null)
+        if (uiController != null)
         {
-            float score = rocketMotor.TotalDistance * scoreMultiplier;
-            resultText.text = $"Score: {Mathf.RoundToInt(score)}";
+            uiController.Render(0f, 0f, 0f);
         }
     }
 }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class KeyboardHoldInput : MonoBehaviour
+public class KeyboardHoldInput : InputPowerSource
 {
     [SerializeField] private KeyCode thrustKey = KeyCode.Space;
     [SerializeField] private float riseSpeed = 6f;
@@ -8,12 +8,11 @@ public class KeyboardHoldInput : MonoBehaviour
 
     private float holdValue;
 
-    public float ProcessedLevel => holdValue;
-
-    private void Update()
+    protected override float ReadRawPower()
     {
         float target = Input.GetKey(thrustKey) ? 1f : 0f;
         float speed = target > holdValue ? riseSpeed : fallSpeed;
         holdValue = Mathf.MoveTowards(holdValue, target, speed * Time.deltaTime);
+        return holdValue;
     }
 }
