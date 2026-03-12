@@ -25,9 +25,11 @@ public class RocketGameController : MonoBehaviour
     [Header("Input")]
     [SerializeField] private InputMode inputMode = InputMode.Keyboard;
 
-    [Header("Attempt")]
+    [Header("Attempt Controls")]
     [SerializeField] private KeyCode startAttemptKey = KeyCode.Space;
     [SerializeField] private KeyCode resetKey = KeyCode.R;
+
+    [Header("Attempt Timing")]
     [SerializeField] private float attemptDurationSeconds = 8f;
     [SerializeField] private bool autoResetAfterResult;
     [SerializeField] private float autoResetDelaySeconds = 2f;
@@ -73,6 +75,7 @@ public class RocketGameController : MonoBehaviour
     private void HandleReadyState()
     {
         uiController.Render(attemptState.ToString(), 0f, 0f, 0f, attemptDurationSeconds, 0f);
+        RenderDebugValues(0f, 0f, 0f, 0f);
 
         if (Input.GetKeyDown(startAttemptKey))
         {
@@ -83,7 +86,8 @@ public class RocketGameController : MonoBehaviour
     private void HandleActiveState()
     {
         InputPowerSource activeInput = ResolveInputSource();
-        float processedPower = activeInput == null ? 0f : signalProcessor.Process(activeInput.CurrentPower);
+        float rawPower = activeInput == null ? 0f : activeInput.CurrentPower;
+        float processedPower = signalProcessor.Process(rawPower);
 
         rocketController.Simulate(processedPower);
 
@@ -92,6 +96,7 @@ public class RocketGameController : MonoBehaviour
         remainingAttemptTime = Mathf.Max(0f, remainingAttemptTime - Time.deltaTime);
 
         uiController.Render(attemptState.ToString(), processedPower, currentHeight, maxHeight, remainingAttemptTime, 0f);
+        RenderDebugValues(rawPower, processedPower, currentHeight, maxHeight);
 
         if (remainingAttemptTime <= 0f)
         {
@@ -102,7 +107,10 @@ public class RocketGameController : MonoBehaviour
     private void HandleResultState()
     {
         resultTimer += Time.deltaTime;
-        uiController.Render(attemptState.ToString(), 0f, rocketController.CurrentHeight, maxHeight, 0f, resultHeight);
+        float currentHeight = rocketController.CurrentHeight;
+
+        uiController.Render(attemptState.ToString(), 0f, currentHeight, maxHeight, 0f, resultHeight);
+        RenderDebugValues(0f, 0f, currentHeight, maxHeight);
 
         if (Input.GetKeyDown(startAttemptKey))
         {
@@ -114,6 +122,18 @@ public class RocketGameController : MonoBehaviour
         {
             ResetForNextAttempt();
         }
+    }
+
+    private void RenderDebugValues(float rawPower, float processedPower, float currentHeight, float currentMaxHeight)
+    {
+        uiController.RenderDebug(
+            rawPower,
+            processedPower,
+            rocketController.CurrentVerticalSpeed,
+            currentHeight,
+            currentMaxHeight,
+            inputMode.ToString(),
+            attemptState.ToString());
     }
 
     private void StartAttempt()
@@ -154,6 +174,7 @@ public class RocketGameController : MonoBehaviour
         microphoneInput?.ResetState();
         rocketController?.ResetToStart();
         uiController?.Render(attemptState.ToString(), 0f, 0f, 0f, remainingAttemptTime, 0f);
+        uiController?.RenderDebug(0f, 0f, 0f, 0f, 0f, inputMode.ToString(), attemptState.ToString());
     }
 
     private InputPowerSource ResolveInputSource()
