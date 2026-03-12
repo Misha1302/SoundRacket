@@ -6,11 +6,9 @@ public class MicrophoneLoudnessSource : InputPowerSource
     [SerializeField] private int requestedSampleRate = 44100;
     [SerializeField] private int sampleWindowSize = 256;
 
-    [Header("Tuning")]
-    [SerializeField] private float microphoneSensitivity = 25f;
-    [Range(0f, 1f)]
-    [SerializeField] private float noiseThreshold = 0.01f;
-    [SerializeField] private float smoothing = 12f;
+    [Header("Input Scaling")]
+    [Tooltip("Scales measured microphone amplitude into a usable 0..1 gameplay input range.")]
+    [SerializeField] private float inputGain = 25f;
 
     [Header("Fallback")]
     [SerializeField] private bool logWarnings = true;
@@ -18,7 +16,6 @@ public class MicrophoneLoudnessSource : InputPowerSource
     private AudioClip microphoneClip;
     private string selectedDevice;
     private float[] sampleBuffer;
-    private float smoothedPower;
     private bool hasWarnedNoDevice;
     private bool hasWarnedNoPermission;
 
@@ -37,8 +34,7 @@ public class MicrophoneLoudnessSource : InputPowerSource
         if (microphoneClip == null)
         {
             TryWarnAboutUnavailableMicrophone();
-            smoothedPower = Mathf.MoveTowards(smoothedPower, 0f, smoothing * Time.deltaTime);
-            return smoothedPower;
+            return 0f;
         }
 
         int micPosition = Microphone.GetPosition(selectedDevice);
@@ -68,17 +64,7 @@ public class MicrophoneLoudnessSource : InputPowerSource
             }
         }
 
-        float gated = peakAmplitude <= noiseThreshold ? 0f : peakAmplitude - noiseThreshold;
-        float normalized = Mathf.Clamp01(gated * microphoneSensitivity);
-        smoothedPower = Mathf.MoveTowards(smoothedPower, normalized, smoothing * Time.deltaTime);
-
-        return smoothedPower;
-    }
-
-    public override void ResetState()
-    {
-        base.ResetState();
-        smoothedPower = 0f;
+        return Mathf.Clamp01(peakAmplitude * inputGain);
     }
 
     private void StartMicrophone()
